@@ -1,0 +1,8 @@
+[{
+  "modid": "proxyserver",
+  "name": "Proxy Server",
+  "description": "Allows you to connect to servers through a proxy",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "authorList": ["Fiw"]
+}]

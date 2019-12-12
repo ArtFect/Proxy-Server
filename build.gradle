@@ -1,0 +1,77 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+ext.modversion = "${project.version_major}.${project.version_minor}"
+
+group = 'ru.fiw.proxyserver'
+version = "${project.version_minecraft}-${modversion}"
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+
+    options.encoding = 'UTF-8'
+}
+
+minecraft {
+    version = "${project.version_minecraft}-${project.version_forge}"
+
+    if (project.hasProperty('version_mappings'))
+        mappings = project.version_mappings
+
+    if (!project.hasProperty('run_location'))
+        runDir = 'run'
+    else
+        runDir = run_location.replace('{modid}', project.name).replace('{mcversion}', project.version_minecraft)
+
+    replaceIn 'proxyserver/ProxyServer.java'
+    replace '${version}', modversion
+    replace '${mcversion}', project.version_minecraft
+    replace '${forgeversion}', project.version_forge
+}
+
+processResources {
+    // this will ensure that this task is redone when the versions change.
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+
+        expand([
+                'modid'          : project.name,
+                'version'        : modversion,
+                'mcversion'      : project.version_minecraft,
+                'forgeversion'   : project.version_forge
+        ])
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+jar {
+    manifest {
+        attributes 'FMLCorePlugin': 'ru.fiw.asm.FMLLoadingPlugin', "ModSide": "CLIENT"
+    }
+}
