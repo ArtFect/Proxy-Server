@@ -37,7 +37,7 @@ final class GuiProxy extends GuiScreen {
 
     private boolean setProxy() {
         String ipPortS = ipPort.getText();
-        if (ipPortS.isEmpty() || ipPortS.equalsIgnoreCase("none") || ipPortS.startsWith("127.0.0.1")) {
+        if (ipPortS.isEmpty() || ipPortS.equalsIgnoreCase("none")) {
             ProxyServer.proxy = new Proxy(socks4.isChecked(),"", 0, userID.getText(), username.getText(), password.getText());
             return true;
         }
