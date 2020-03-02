@@ -5,26 +5,18 @@ import com.google.common.eventbus.Subscribe;
 import io.netty.channel.Channel;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiMultiplayer;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.DummyModContainer;
 import net.minecraftforge.fml.common.LoadController;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ModMetadata;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 
-public class ProxyServer  extends DummyModContainer {
+public class ProxyServer extends DummyModContainer {
     public static Proxy proxy = new Proxy();
     public static String lastProxyIp = "none";
 
@@ -50,9 +42,10 @@ public class ProxyServer  extends DummyModContainer {
 
     @Subscribe
     @Mod.EventHandler
-    public void preinit(FMLPreInitializationEvent event) {
-        MinecraftForge.EVENT_BUS.register(new ButtonAdder());
+    public void preinit(FMLPreInitializationEvent event) throws IOException {
         Config.loadCurrentProxy();
+        new AccountsProxy();
+        MinecraftForge.EVENT_BUS.register(new ButtonAdder());
     }
 
     public static void hook(Channel channel) {
