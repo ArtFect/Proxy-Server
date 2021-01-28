@@ -1,20 +1,29 @@
 package ru.fiw.proxyserver;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.mojang.realmsclient.gui.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.EnumConnectionState;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.handshake.client.C00Handshake;
-import net.minecraft.network.status.INetHandlerStatusClient;
-import net.minecraft.network.status.client.CPacketPing;
-import net.minecraft.network.status.client.CPacketServerQuery;
-import net.minecraft.network.status.server.SPacketPong;
-import net.minecraft.network.status.server.SPacketServerInfo;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import net.minecraft.network.*;
+import net.minecraft.network.listener.ClientQueryPacketListener;
+import net.minecraft.network.packet.c2s.handshake.HandshakeC2SPacket;
+import net.minecraft.network.packet.c2s.query.QueryPingC2SPacket;
+import net.minecraft.network.packet.c2s.query.QueryRequestC2SPacket;
+import net.minecraft.network.packet.s2c.query.QueryPongS2CPacket;
+import net.minecraft.network.packet.s2c.query.QueryResponseS2CPacket;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -23,70 +32,97 @@ public class TestPing {
     public String state = "";
 
     private long pingSentAt;
-    private NetworkManager pingDestination = null;
-    private String proxyIp = "";
+    private ClientConnection pingDestination = null;
+    private Proxy proxy;
     private static final ThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(5, (new ThreadFactoryBuilder()).setNameFormat("Server Pinger #%d").setDaemon(true).build());
 
-    public void run(String ip, int port, String proxyIp) {
-        this.proxyIp = proxyIp;
+    public void run(String ip, int port, Proxy proxy) {
+        this.proxy = proxy;
         TestPing.EXECUTOR.submit(() -> ping(ip, port));
     }
 
     private void ping(String ip, int port) {
         state = "Pinging " + ip + "...";
-        NetworkManager networkmanager;
+        ClientConnection clientConnection;
         try {
-            networkmanager = NetworkManager.createNetworkManagerAndConnect(InetAddress.getByName(ip), port, false);
+            clientConnection = createTestClientConnection(InetAddress.getByName(ip), port);
         } catch (UnknownHostException e) {
-            state = ChatFormatting.RED + "Can't connect to proxy";
+            state = Formatting.RED + "Can't connect to proxy";
             return;
         } catch (Exception e) {
-            state = ChatFormatting.RED + "Can't ping " + ip;
+            state = Formatting.RED + "Can't ping " + ip;
             return;
         }
-        pingDestination = networkmanager;
-        networkmanager.setNetHandler(new INetHandlerStatusClient() {
+        pingDestination = clientConnection;
+        clientConnection.setPacketListener(new ClientQueryPacketListener() {
             private boolean successful;
 
-            public void handleServerInfo(SPacketServerInfo packetIn) {
-                pingSentAt = Minecraft.getSystemTime();
-                networkmanager.sendPacket(new CPacketPing(pingSentAt));
+            public void onResponse(QueryResponseS2CPacket packet) {
+                pingSentAt = Util.getMeasuringTimeMs();
+                clientConnection.send(new QueryPingC2SPacket(pingSentAt));
             }
 
-            public void handlePong(SPacketPong packetIn) {
+            public void onPong(QueryPongS2CPacket packet) {
                 successful = true;
                 pingDestination = null;
-                long pingToServer = Minecraft.getSystemTime() - pingSentAt;
-                if (proxyIp.isEmpty() || proxyIp.equals(ProxyServer.lastProxyIp)) {
-                    state = "Ping: " + pingToServer;
-                } else {
-                    state = ChatFormatting.RED + "Cannot set a proxy, try restarting minecraft";
-                }
-                networkmanager.closeChannel(new TextComponentString("Finished"));
+                long pingToServer = Util.getMeasuringTimeMs() - pingSentAt;
+                state = "Ping: " + pingToServer;
+                clientConnection.disconnect(new TranslatableText("multiplayer.status.finished"));
             }
 
-            public void onDisconnect(ITextComponent reason) {
+            public void onDisconnected(Text reason) {
                 pingDestination = null;
                 if (!this.successful) {
-                    state = ChatFormatting.RED + "Can't ping " + ip + ": " + reason.getUnformattedText();
+                    state = Formatting.RED + "Can't ping " + ip + ": " + reason.getString();
                 }
+            }
+
+            public ClientConnection getConnection() {
+                return clientConnection;
             }
         });
 
         try {
-            networkmanager.sendPacket(new C00Handshake(ip, port, EnumConnectionState.STATUS));
-            networkmanager.sendPacket(new CPacketServerQuery());
+            clientConnection.send(new HandshakeC2SPacket(ip, port, NetworkState.STATUS));
+            clientConnection.send(new QueryRequestC2SPacket());
         } catch (Throwable throwable) {
-            state = ChatFormatting.RED + "Can't ping " + ip;
+            state = Formatting.RED + "Can't ping " + ip;
         }
+    }
+
+    private ClientConnection createTestClientConnection(InetAddress address, int port) {
+        final ClientConnection clientConnection = new ClientConnection(NetworkSide.CLIENTBOUND);
+
+        (new Bootstrap()).group(ClientConnection.CLIENT_IO_GROUP.get()).handler(new ChannelInitializer<Channel>() {
+            protected void initChannel(Channel channel) {
+                try {
+                    channel.config().setOption(ChannelOption.TCP_NODELAY, true);
+                } catch (ChannelException ignored) {
+                }
+
+                channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30))
+                        .addLast("splitter", new SplitterHandler())
+                        .addLast("decoder", new DecoderHandler(NetworkSide.CLIENTBOUND))
+                        .addLast("prepender", new SizePrepender())
+                        .addLast("encoder", new PacketEncoder(NetworkSide.SERVERBOUND))
+                        .addLast("packet_handler", clientConnection);
+
+                if (proxy.type == Proxy.ProxyType.SOCKS5) {
+                    channel.pipeline().addFirst(new Socks5ProxyHandler(new InetSocketAddress(proxy.getIp(), proxy.getPort()), proxy.username.isEmpty() ? null : proxy.username, proxy.password.isEmpty() ? null : proxy.password));
+                } else {
+                    channel.pipeline().addFirst(new Socks4ProxyHandler(new InetSocketAddress(proxy.getIp(), proxy.getPort()), proxy.username.isEmpty() ? null : proxy.username));
+                }
+            }
+        }).channel(NioSocketChannel.class).connect(address, port).syncUninterruptibly();
+        return clientConnection;
     }
 
     public void pingPendingNetworks() {
         if (pingDestination != null) {
-            if (pingDestination.isChannelOpen()) {
-                pingDestination.processReceivedPackets();
+            if (pingDestination.isOpen()) {
+                pingDestination.tick();
             } else {
-                pingDestination.checkDisconnected();
+                pingDestination.handleDisconnection();
             }
         }
     }
