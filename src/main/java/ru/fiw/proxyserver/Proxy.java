@@ -9,7 +9,7 @@ public class Proxy {
     public String username = "";
     public String password = "";
 
-    public Proxy(){
+    public Proxy() {
 
     }
 

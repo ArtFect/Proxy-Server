@@ -26,8 +26,6 @@ public class GuiProxy extends Screen {
     private int[] positionY;
     private int positionX;
 
-    private Proxy oldProxy;
-
     private TestPing testPing = new TestPing();
 
     public GuiProxy(Screen parentScreen) {
@@ -35,14 +33,12 @@ public class GuiProxy extends Screen {
         this.parentScreen = parentScreen;
     }
 
-    private boolean setProxy() {
+    private boolean checkProxy() {
         if (!isValidIpPort(ipPort.getText())) {
             msg = Formatting.RED + "Invalid IP:PORT";
             this.ipPort.changeFocus(true);
             return false;
         }
-
-        ProxyServer.proxy = new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText());
         return true;
     }
 
@@ -72,7 +68,7 @@ public class GuiProxy extends Screen {
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(matrixStack);
 
-        if(enabledCheck.isChecked() && !isValidIpPort(ipPort.getText())){
+        if (enabledCheck.isChecked() && !isValidIpPort(ipPort.getText())) {
             enabledCheck.onPress();
         }
 
@@ -86,7 +82,7 @@ public class GuiProxy extends Screen {
             this.username.render(matrixStack, mouseX, mouseY, partialTicks);
         } else {
             drawStringWithShadow(matrixStack, this.textRenderer, "Username: ", this.width / 2 - 140, positionY[4] + 5, 10526880);
-            drawStringWithShadow(matrixStack, this.textRenderer, "Password: ",this.width / 2 - 140, positionY[5] + 5, 10526880);
+            drawStringWithShadow(matrixStack, this.textRenderer, "Password: ", this.width / 2 - 140, positionY[5] + 5, 10526880);
             this.username.render(matrixStack, mouseX, mouseY, partialTicks);
             this.password.render(matrixStack, mouseX, mouseY, partialTicks);
         }
@@ -112,7 +108,6 @@ public class GuiProxy extends Screen {
         centerButtons(10, buttonLength, 26);
 
         isSocks4 = ProxyServer.proxy.type == Proxy.ProxyType.SOCKS4;
-        oldProxy = ProxyServer.proxy;
 
         ButtonWidget proxyType = new ButtonWidget(positionX, positionY[1], buttonLength, 20, new LiteralText(isSocks4 ? "Socks 4" : "Socks 5"), (button) -> {
             isSocks4 = !isSocks4;
@@ -139,7 +134,8 @@ public class GuiProxy extends Screen {
         int posXButtons = (this.width / 2) - (((buttonLength / 2) * 3) / 2);
 
         ButtonWidget apply = new ButtonWidget(posXButtons, positionY[8], buttonLength / 2 - 3, 20, new LiteralText("Apply"), (button) -> {
-            if (setProxy()) {
+            if (checkProxy()) {
+                ProxyServer.proxy = new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText());
                 AccountsProxy.setDefaultProxy(ProxyServer.proxy);
                 AccountsProxy.saveProxyAccounts();
                 ProxyServer.proxyEnabled = enabledCheck.isChecked();
@@ -148,14 +144,14 @@ public class GuiProxy extends Screen {
         });
         this.addButton(apply);
 
-        ButtonWidget test = new ButtonWidget(posXButtons + buttonLength / 2 + 3, positionY[8], buttonLength / 2  - 3, 20, new LiteralText("Test"), (button) -> {
-            if(ipPort.getText().isEmpty() || ipPort.getText().equalsIgnoreCase("none")){
+        ButtonWidget test = new ButtonWidget(posXButtons + buttonLength / 2 + 3, positionY[8], buttonLength / 2 - 3, 20, new LiteralText("Test"), (button) -> {
+            if (ipPort.getText().isEmpty() || ipPort.getText().equalsIgnoreCase("none")) {
                 msg = Formatting.RED + "Specify proxy to test";
                 return;
             }
-            if (setProxy()) {
+            if (checkProxy()) {
                 testPing = new TestPing();
-                testPing.run("mc.hypixel.net", 25565, ProxyServer.proxy);
+                testPing.run("mc.hypixel.net", 25565, new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText()));
             }
         });
         this.addButton(test);
@@ -164,7 +160,6 @@ public class GuiProxy extends Screen {
         this.addButton(this.enabledCheck);
 
         ButtonWidget cancel = new ButtonWidget(posXButtons + (buttonLength / 2 + 3) * 2, positionY[8], buttonLength / 2 - 3, 20, new LiteralText("Cancel"), (button) -> {
-            ProxyServer.proxy = oldProxy;
             MinecraftClient.getInstance().openScreen(parentScreen);
         });
         this.addButton(cancel);

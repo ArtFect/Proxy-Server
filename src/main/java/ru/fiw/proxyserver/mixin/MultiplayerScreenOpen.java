@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.fiw.proxyserver.AccountsProxy;
-import ru.fiw.proxyserver.ProxyServer;
 import ru.fiw.proxyserver.GuiProxy;
+import ru.fiw.proxyserver.ProxyServer;
 
 @Mixin(MultiplayerScreen.class)
 public class MultiplayerScreenOpen {
