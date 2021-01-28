@@ -15,6 +15,6 @@ public class ProxyServer implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        AccountsProxy.loadProxyAccounts();
+        Config.loadConfig();
     }
 }

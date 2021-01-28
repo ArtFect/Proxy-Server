@@ -136,9 +136,9 @@ public class GuiProxy extends Screen {
         ButtonWidget apply = new ButtonWidget(posXButtons, positionY[8], buttonLength / 2 - 3, 20, new LiteralText("Apply"), (button) -> {
             if (checkProxy()) {
                 ProxyServer.proxy = new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText());
-                AccountsProxy.setDefaultProxy(ProxyServer.proxy);
-                AccountsProxy.saveProxyAccounts();
                 ProxyServer.proxyEnabled = enabledCheck.isChecked();
+                Config.setDefaultProxy(ProxyServer.proxy);
+                Config.saveConfig();
                 MinecraftClient.getInstance().openScreen(new MultiplayerScreen(new TitleScreen()));
             }
         });
