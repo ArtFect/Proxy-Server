@@ -23,6 +23,6 @@
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "proxyserver.mixins.json"
   ]
 }
