@@ -2,13 +2,13 @@
   "required": true,
   "minVersion": "0.8",
   "package": "ru.fiw.proxyserver.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_16",
   "mixins": [
   ],
   "client": [
     "ClientConnectionInit",
     "MultiplayerScreenOpen",
-    "MultiplayerScreenInvoker"
+    "ScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
