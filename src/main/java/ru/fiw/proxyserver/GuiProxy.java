@@ -49,7 +49,7 @@ public class GuiProxy extends Screen {
     private boolean checkProxy() {
         if (!isValidIpPort(ipPort.getText())) {
             msg = Formatting.RED + "Invalid IP:PORT";
-            this.ipPort.changeFocus(true);
+            this.ipPort.setTextFieldFocused(true);
             return false;
         }
         return true;
@@ -127,7 +127,7 @@ public class GuiProxy extends Screen {
         this.ipPort = new TextFieldWidget(this.textRenderer, positionX, positionY[2], buttonLength, 20, new LiteralText(""));
         this.ipPort.setText(ProxyServer.proxy.ipPort);
         this.ipPort.setMaxLength(1024);
-        this.ipPort.changeFocus(true);
+        this.ipPort.setTextFieldFocused(true);
         this.addSelectableChild(this.ipPort);
 
         this.username = new TextFieldWidget(this.textRenderer, positionX, positionY[4], buttonLength, 20, new LiteralText(""));
