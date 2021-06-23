@@ -10,6 +10,7 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import org.apache.commons.lang3.StringUtils;
 
 public class GuiProxy extends Screen {
     private boolean isSocks4 = false;
@@ -33,6 +34,18 @@ public class GuiProxy extends Screen {
         this.parentScreen = parentScreen;
     }
 
+    private static boolean isValidIpPort(String ipP) {
+        String[] split = ipP.split(":");
+        if (split.length > 1) {
+            if (!StringUtils.isNumeric(split[1])) return false;
+            int port = Integer.parseInt(split[1]);
+            if (port < 0 || port > 0xFFFF) return false;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean checkProxy() {
         if (!isValidIpPort(ipPort.getText())) {
             msg = Formatting.RED + "Invalid IP:PORT";
@@ -40,10 +53,6 @@ public class GuiProxy extends Screen {
             return false;
         }
         return true;
-    }
-
-    private static boolean isValidIpPort(String ipP) {
-        return ipP.matches("(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]):[0-9]+");
     }
 
     private void centerButtons(int amount, int buttonLength, int gap) {
@@ -117,7 +126,7 @@ public class GuiProxy extends Screen {
 
         this.ipPort = new TextFieldWidget(this.textRenderer, positionX, positionY[2], buttonLength, 20, new LiteralText(""));
         this.ipPort.setText(ProxyServer.proxy.ipPort);
-        this.ipPort.setMaxLength(21);
+        this.ipPort.setMaxLength(1024);
         this.ipPort.changeFocus(true);
         this.addSelectableChild(this.ipPort);
 
