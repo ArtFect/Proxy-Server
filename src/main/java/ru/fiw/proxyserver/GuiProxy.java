@@ -9,6 +9,7 @@ import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,9 +29,13 @@ public class GuiProxy extends Screen {
     private int positionX;
 
     private TestPing testPing = new TestPing();
+    
+    
+	private static String text_proxy = new TranslatableText("ui.proxyserver.options.proxy").getString();
+
 
     public GuiProxy(Screen parentScreen) {
-        super(new LiteralText("Proxy"));
+        super(new LiteralText(text_proxy));
         this.parentScreen = parentScreen;
     }
 
@@ -48,7 +53,7 @@ public class GuiProxy extends Screen {
 
     private boolean checkProxy() {
         if (!isValidIpPort(ipPort.getText())) {
-            msg = Formatting.RED + "Invalid IP:PORT";
+            msg = Formatting.RED + new TranslatableText("ui.proxyserver.options.invalidIpPort").getString();
             this.ipPort.setTextFieldFocused(true);
             return false;
         }
@@ -81,17 +86,17 @@ public class GuiProxy extends Screen {
             enabledCheck.onPress();
         }
 
-        drawStringWithShadow(matrixStack, this.textRenderer, "Proxy Type:", this.width / 2 - 149, positionY[1] + 5, 10526880);
-        drawCenteredText(matrixStack, this.textRenderer, "Proxy Authentication (optional)", this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
-        drawStringWithShadow(matrixStack, this.textRenderer, "IP:PORT: ", this.width / 2 - 125, positionY[2] + 5, 10526880);
+        drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 10526880);
+        drawCenteredText(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
+        drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 10526880);
 
         this.ipPort.render(matrixStack, mouseX, mouseY, partialTicks);
         if (isSocks4) {
-            drawStringWithShadow(matrixStack, this.textRenderer, "User ID: ", this.width / 2 - 140, positionY[4] + 5, 10526880);
+            drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
             this.username.render(matrixStack, mouseX, mouseY, partialTicks);
         } else {
-            drawStringWithShadow(matrixStack, this.textRenderer, "Username: ", this.width / 2 - 140, positionY[4] + 5, 10526880);
-            drawStringWithShadow(matrixStack, this.textRenderer, "Password: ", this.width / 2 - 140, positionY[5] + 5, 10526880);
+            drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
+            drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 10526880);
             this.username.render(matrixStack, mouseX, mouseY, partialTicks);
             this.password.render(matrixStack, mouseX, mouseY, partialTicks);
         }
@@ -142,7 +147,7 @@ public class GuiProxy extends Screen {
 
         int posXButtons = (this.width / 2) - (((buttonLength / 2) * 3) / 2);
 
-        ButtonWidget apply = new ButtonWidget(posXButtons, positionY[8], buttonLength / 2 - 3, 20, new LiteralText("Apply"), (button) -> {
+        ButtonWidget apply = new ButtonWidget(posXButtons, positionY[8], buttonLength / 2 - 3, 20,  new TranslatableText("ui.proxyserver.options.apply"), (button) -> {
             if (checkProxy()) {
                 ProxyServer.proxy = new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText());
                 ProxyServer.proxyEnabled = enabledCheck.isChecked();
@@ -153,9 +158,9 @@ public class GuiProxy extends Screen {
         });
         this.addDrawableChild(apply);
 
-        ButtonWidget test = new ButtonWidget(posXButtons + buttonLength / 2 + 3, positionY[8], buttonLength / 2 - 3, 20, new LiteralText("Test"), (button) -> {
+        ButtonWidget test = new ButtonWidget(posXButtons + buttonLength / 2 + 3, positionY[8], buttonLength / 2 - 3, 20, new TranslatableText("ui.proxyserver.options.test"), (button) -> {
             if (ipPort.getText().isEmpty() || ipPort.getText().equalsIgnoreCase("none")) {
-                msg = Formatting.RED + "Specify proxy to test";
+                msg = Formatting.RED + new TranslatableText("ui.proxyserver.err.specProxy").getString();
                 return;
             }
             if (checkProxy()) {
@@ -165,10 +170,10 @@ public class GuiProxy extends Screen {
         });
         this.addDrawableChild(test);
 
-        this.enabledCheck = new CheckboxWidget((this.width / 2) - (15 + textRenderer.getWidth("Proxy Enabled")) / 2, positionY[7], buttonLength, 20, new LiteralText("Proxy Enabled"), ProxyServer.proxyEnabled);
+        this.enabledCheck = new CheckboxWidget((this.width / 2) - (15 + textRenderer.getWidth(new TranslatableText("ui.proxyserver.options.proxyEnabled"))) / 2, positionY[7], buttonLength, 20, new TranslatableText("ui.proxyserver.options.proxyEnabled"), ProxyServer.proxyEnabled);
         this.addDrawableChild(this.enabledCheck);
 
-        ButtonWidget cancel = new ButtonWidget(posXButtons + (buttonLength / 2 + 3) * 2, positionY[8], buttonLength / 2 - 3, 20, new LiteralText("Cancel"), (button) -> {
+        ButtonWidget cancel = new ButtonWidget(posXButtons + (buttonLength / 2 + 3) * 2, positionY[8], buttonLength / 2 - 3, 20, new TranslatableText("ui.proxyserver.options.cancel"), (button) -> {
             MinecraftClient.getInstance().openScreen(parentScreen);
         });
         this.addDrawableChild(cancel);

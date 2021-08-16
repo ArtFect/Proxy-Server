@@ -42,15 +42,15 @@ public class TestPing {
     }
 
     private void ping(String ip, int port) {
-        state = "Pinging " + ip + "...";
+        state = new TranslatableText("ui.proxyserver.ping.pinging", ip).getString();
         ClientConnection clientConnection;
         try {
             clientConnection = createTestClientConnection(InetAddress.getByName(ip), port);
         } catch (UnknownHostException e) {
-            state = Formatting.RED + "Can't connect to proxy";
+            state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantConnect").getString();
             return;
         } catch (Exception e) {
-            state = Formatting.RED + "Can't ping " + ip;
+            state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantPing", ip).getString();
             return;
         }
         pingDestination = clientConnection;
@@ -66,14 +66,14 @@ public class TestPing {
                 successful = true;
                 pingDestination = null;
                 long pingToServer = Util.getMeasuringTimeMs() - pingSentAt;
-                state = "Ping: " + pingToServer;
+                state = new TranslatableText("ui.proxyserver.ping.showPing", pingToServer).getString();
                 clientConnection.disconnect(new TranslatableText("multiplayer.status.finished"));
             }
 
             public void onDisconnected(Text reason) {
                 pingDestination = null;
                 if (!this.successful) {
-                    state = Formatting.RED + "Can't ping " + ip + ": " + reason.getString();
+                    state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantPingReason", ip, reason.getString()).getString();
                 }
             }
 
@@ -86,7 +86,7 @@ public class TestPing {
             clientConnection.send(new HandshakeC2SPacket(ip, port, NetworkState.STATUS));
             clientConnection.send(new QueryRequestC2SPacket());
         } catch (Throwable throwable) {
-            state = Formatting.RED + "Can't ping " + ip;
+            state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantPing", ip).getString();
         }
     }
 
