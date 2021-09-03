@@ -1,0 +1,20 @@
+{
+    "ui.proxyserver.options.proxy": "Proxy",
+    "ui.proxyserver.options.invalidIpPort": "Invalid IP:PORT",
+    "ui.proxyserver.options.proxyType": "Proxy Type: ",
+    "ui.proxyserver.options.auth": "Proxy Authentication (optional)",
+    "ui.proxyserver.options.ipPort": "IP:PORT: ",
+    "ui.proxyserver.options.apply": "Apply",
+    "ui.proxyserver.options.cancel": "Cancel",
+    "ui.proxyserver.options.test": "Test",
+    "ui.proxyserver.options.proxyEnabled": "Proxy Enabled",
+    "ui.proxyserver.auth.id": "User ID: ",
+    "ui.proxyserver.auth.username": "Username: ",
+    "ui.proxyserver.auth.password": "Password: ",
+    "ui.proxyserver.err.specProxy": "Specify proxy to test",
+    "ui.proxyserver.err.cantConnect": "Can't connect to proxy",
+    "ui.proxyserver.err.cantPing": "Can't ping %d",
+    "ui.proxyserver.err.cantPingReason": "Can't ping %d: %d",
+    "ui.proxyserver.ping.pinging": "Pinging %d...",
+    "ui.proxyserver.ping.showPing": "Ping: %dms"
+}
