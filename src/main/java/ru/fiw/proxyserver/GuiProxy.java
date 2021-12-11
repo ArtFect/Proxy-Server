@@ -1,68 +1,67 @@
 package ru.fiw.proxyserver;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.TitleScreen;
-import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Formatting;
-import org.apache.commons.lang3.StringUtils;
+import com.mojang.realmsclient.gui.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.*;
+import net.minecraftforge.fml.client.config.GuiCheckBox;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.lwjgl.input.Keyboard;
 
-public class GuiProxy extends Screen {
-    private boolean isSocks4 = false;
+import java.awt.*;
+import java.io.IOException;
+import java.net.UnknownHostException;
 
-    private TextFieldWidget ipPort;
-    private TextFieldWidget username;
-    private TextFieldWidget password;
-    private CheckboxWidget enabledCheck;
+final class GuiProxy extends GuiScreen {
+    private GuiCheckBox socks4;
+    private GuiCheckBox socks5;
+    private GuiTextField ipPort;
 
-    private Screen parentScreen;
+    private GuiTextField username;
+    private GuiTextField userID;
+    private GuiTextField password;
+
+    private GuiScreen parentScreen;
 
     private String msg = "";
 
-    private int[] positionY;
+    private Integer[] positionY;
     private int positionX;
 
+    private Proxy oldProxy;
+
     private TestPing testPing = new TestPing();
-    
-    
-	private static String text_proxy = new TranslatableText("ui.proxyserver.options.proxy").getString();
 
-
-    public GuiProxy(Screen parentScreen) {
-        super(new LiteralText(text_proxy));
+    GuiProxy(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
+        this.fontRendererObj = Minecraft.getMinecraft().fontRendererObj;
+    }
+
+    private boolean setProxy() {
+        String ipPortS = ipPort.getText();
+        if (ipPortS.isEmpty() || ipPortS.equalsIgnoreCase("none")) {
+            ProxyServer.proxy = new Proxy(socks4.isChecked(),"", 0, userID.getText(), username.getText(), password.getText());
+            return true;
+        }
+        if (!isValidIpPort(ipPortS)) {
+            msg = ChatFormatting.RED + "Invalid IP:PORT";
+            ipPort.setFocused(true);
+            return false;
+        }
+
+        String[] spl = ipPortS.split(":");
+        ProxyServer.proxy = new Proxy(socks4.isChecked(), spl[0], Integer.parseInt(spl[1]), userID.getText(), username.getText(), password.getText());
+        return true;
     }
 
     private static boolean isValidIpPort(String ipP) {
+//        return ipP.matches("(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]):[0-9]+");
         String[] split = ipP.split(":");
-        if (split.length > 1) {
-            if (!StringUtils.isNumeric(split[1])) return false;
-            int port = Integer.parseInt(split[1]);
-            if (port < 0 || port > 0xFFFF) return false;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean checkProxy() {
-        if (!isValidIpPort(ipPort.getText())) {
-            msg = Formatting.RED + new TranslatableText("ui.proxyserver.options.invalidIpPort").getString();
-            this.ipPort.setTextFieldFocused(true);
-            return false;
-        }
-        return true;
+        return split.length > 1 && NumberUtils.isNumber(split[1]);
     }
 
     private void centerButtons(int amount, int buttonLength, int gap) {
         positionX = (this.width / 2) - (buttonLength / 2);
-        positionY = new int[amount];
+        positionY = new Integer[amount];
         int center = (this.height + amount * gap) / 2;
         int buttonStarts = center - (amount * gap);
         for (int i = 0; i != amount; i++) {
@@ -71,117 +70,142 @@ public class GuiProxy extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        super.keyPressed(keyCode, scanCode, modifiers);
+    protected void actionPerformed(GuiButton b) throws UnknownHostException {
+        switch (b.id) {
+            case 1: //Socks4 check
+                if (!socks5.isChecked()) {
+                    socks4.setIsChecked(true);
+                } else {
+                    socks4.setIsChecked(true);
+                    socks5.setIsChecked(false);
+                }
+                break;
+            case 2: //Socks5 check
+                if (!socks4.isChecked()) {
+                    socks5.setIsChecked(true);
+                } else {
+                    socks5.setIsChecked(true);
+                    socks4.setIsChecked(false);
+                }
+                break;
+            case 4: //Test
+                if (setProxy()) {
+                    testPing = new TestPing();
+                    testPing.run("mc.hypixel.net", 25565, ProxyServer.proxy.ip);
+                }
+                break;
+            case 6: //Apply
+                if (setProxy()) {
+                    Config.saveProxy(ProxyServer.proxy);
+                    this.mc.displayGuiScreen(new GuiMultiplayer(new GuiMainMenu()));
+                }
+                break;
+            case 7: //Cancel
+                ProxyServer.proxy = oldProxy;
+                this.mc.displayGuiScreen(parentScreen);
+                break;
+        }
+    }
+
+    @Override
+    protected void keyTyped(char c, int k) throws IOException {
+        super.keyTyped(c, k);
+        this.ipPort.textboxKeyTyped(c, k);
+        this.username.textboxKeyTyped(c, k);
+        this.password.textboxKeyTyped(c, k);
         msg = "";
         testPing.state = "";
-        return true;
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(matrixStack);
+    protected void mouseClicked(int x, int y, int b) throws IOException {
+        super.mouseClicked(x, y, b);
+        this.ipPort.mouseClicked(x, y, b);
+        this.username.mouseClicked(x, y, b);
+        this.password.mouseClicked(x, y, b);
+    }
 
-        if (enabledCheck.isChecked() && !isValidIpPort(ipPort.getText())) {
-            enabledCheck.onPress();
-        }
+    @Override
+    public void drawScreen(int p_73863_1_, int p_73863_2_, float p_73863_3_) {
+        this.drawDefaultBackground();
 
-        drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 10526880);
-        drawCenteredText(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
-        drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 10526880);
+        this.drawString(this.fontRendererObj, "Proxy Type:", this.width / 2 - 149, positionY[1] + 5, 10526880);
+        this.drawString(this.fontRendererObj, "IP:PORT", this.width / 2 - 125, positionY[2] + 5, 10526880);
+        this.drawCenteredString(this.fontRendererObj, "Authentication (optional)", this.width / 2, positionY[3] + 8, Color.WHITE.getRGB());
 
-        this.ipPort.render(matrixStack, mouseX, mouseY, partialTicks);
-        if (isSocks4) {
-            drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
-            this.username.render(matrixStack, mouseX, mouseY, partialTicks);
+        this.ipPort.drawTextBox();
+        if (socks5.isChecked()) {
+            this.drawString(this.fontRendererObj, "Username: ", this.width / 2 - 140, positionY[4] + 5, 10526880);
+            this.drawString(this.fontRendererObj, "Password: ", this.width / 2 - 140, positionY[5] + 5, 10526880);
+            this.username.drawTextBox();
+            this.password.drawTextBox();
         } else {
-            drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
-            drawStringWithShadow(matrixStack, this.textRenderer, new TranslatableText("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 10526880);
-            this.username.render(matrixStack, mouseX, mouseY, partialTicks);
-            this.password.render(matrixStack, mouseX, mouseY, partialTicks);
+            this.drawString(this.fontRendererObj, "User ID: ", this.width / 2 - 140, positionY[4] + 5, 10526880);
+            this.userID.drawTextBox();
         }
 
-        drawCenteredText(matrixStack, this.textRenderer, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 10526880);
 
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+        this.drawCenteredString(this.fontRendererObj, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 10526880);
+        super.drawScreen(p_73863_1_, p_73863_2_, p_73863_3_);
     }
 
     @Override
-    public void tick() {
+    public void updateScreen() {
+        super.updateScreen();
+        this.ipPort.drawTextBox();
+        this.username.drawTextBox();
+        if (socks5.isChecked()) {
+            this.password.drawTextBox();
+        }
+
         testPing.pingPendingNetworks();
-
-        this.ipPort.tick();
-        this.username.tick();
-        this.password.tick();
     }
 
     @Override
-    public void init() {
-        MinecraftClient.getInstance().keyboard.setRepeatEvents(true);
+    public void initGui() {
+        super.initGui();
+        Keyboard.enableRepeatEvents(true);
         int buttonLength = 160;
         centerButtons(10, buttonLength, 26);
+        this.socks4 = new GuiCheckBox(1, positionX + 10, positionY[1] + 5, "Socks4", ProxyServer.proxy.type == ProxyServer.ProxyType.SOCKS4);
+        this.buttonList.add(this.socks4);
 
-        isSocks4 = ProxyServer.proxy.type == Proxy.ProxyType.SOCKS4;
+        this.socks5 = new GuiCheckBox(2, positionX + 100, positionY[1] + 5, "Socks5", ProxyServer.proxy.type == ProxyServer.ProxyType.SOCKS5);
+        this.buttonList.add(this.socks5);
 
-        ButtonWidget proxyType = new ButtonWidget(positionX, positionY[1], buttonLength, 20, new LiteralText(isSocks4 ? "Socks 4" : "Socks 5"), (button) -> {
-            isSocks4 = !isSocks4;
-            button.setMessage(new LiteralText(isSocks4 ? "Socks 4" : "Socks 5"));
-        });
-        this.addDrawableChild(proxyType);
+        this.ipPort = new GuiTextField(3, this.fontRendererObj, positionX, positionY[2], buttonLength, 20);
+        this.ipPort.setText(ProxyServer.proxy.enabled ? ProxyServer.proxy.ip + ":" + ProxyServer.proxy.port : "");
+        this.ipPort.setFocused(true);
+        this.ipPort.setMaxStringLength(255);
 
-        this.ipPort = new TextFieldWidget(this.textRenderer, positionX, positionY[2], buttonLength, 20, new LiteralText(""));
-        this.ipPort.setText(ProxyServer.proxy.ipPort);
-        this.ipPort.setMaxLength(1024);
-        this.ipPort.setTextFieldFocused(true);
-        this.addSelectableChild(this.ipPort);
-
-        this.username = new TextFieldWidget(this.textRenderer, positionX, positionY[4], buttonLength, 20, new LiteralText(""));
-        this.username.setMaxLength(255);
+        this.username = new GuiTextField(4, this.fontRendererObj, positionX, positionY[4], buttonLength, 20);
         this.username.setText(ProxyServer.proxy.username);
-        this.addSelectableChild(this.username);
+        this.username.setMaxStringLength(255);
 
-        this.password = new TextFieldWidget(this.textRenderer, positionX, positionY[5], buttonLength, 20, new LiteralText(""));
-        this.password.setMaxLength(255);
+        this.userID = new GuiTextField(8, this.fontRendererObj, positionX, positionY[4], buttonLength, 20);
+        this.userID.setText(ProxyServer.proxy.userID);
+        this.userID.setMaxStringLength(255);
+
+        this.password = new GuiTextField(5, this.fontRendererObj, positionX, positionY[5], buttonLength, 20);
         this.password.setText(ProxyServer.proxy.password);
-        this.addSelectableChild(this.password);
+        this.password.setMaxStringLength(255);
 
-        int posXButtons = (this.width / 2) - (((buttonLength / 2) * 3) / 2);
+        GuiButton apply = new GuiButton(6, positionX, positionY[7], buttonLength / 2 - 3, 20, "Apply");
+        this.buttonList.add(apply);
 
-        ButtonWidget apply = new ButtonWidget(posXButtons, positionY[8], buttonLength / 2 - 3, 20,  new TranslatableText("ui.proxyserver.options.apply"), (button) -> {
-            if (checkProxy()) {
-                ProxyServer.proxy = new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText());
-                ProxyServer.proxyEnabled = enabledCheck.isChecked();
-                Config.setDefaultProxy(ProxyServer.proxy);
-                Config.saveConfig();
-                MinecraftClient.getInstance().openScreen(new MultiplayerScreen(new TitleScreen()));
-            }
-        });
-        this.addDrawableChild(apply);
+        GuiButton test = new GuiButton(4, positionX + buttonLength / 2 + 3, positionY[7], buttonLength / 2 - 3, 20, "Test");
+        this.buttonList.add(test);
 
-        ButtonWidget test = new ButtonWidget(posXButtons + buttonLength / 2 + 3, positionY[8], buttonLength / 2 - 3, 20, new TranslatableText("ui.proxyserver.options.test"), (button) -> {
-            if (ipPort.getText().isEmpty() || ipPort.getText().equalsIgnoreCase("none")) {
-                msg = Formatting.RED + new TranslatableText("ui.proxyserver.err.specProxy").getString();
-                return;
-            }
-            if (checkProxy()) {
-                testPing = new TestPing();
-                testPing.run("mc.hypixel.net", 25565, new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText()));
-            }
-        });
-        this.addDrawableChild(test);
+        GuiButton cancel = new GuiButton(7, positionX, positionY[8], buttonLength, 20, "Cancel");
+        this.buttonList.add(cancel);
 
-        this.enabledCheck = new CheckboxWidget((this.width / 2) - (15 + textRenderer.getWidth(new TranslatableText("ui.proxyserver.options.proxyEnabled"))) / 2, positionY[7], buttonLength, 20, new TranslatableText("ui.proxyserver.options.proxyEnabled"), ProxyServer.proxyEnabled);
-        this.addDrawableChild(this.enabledCheck);
-
-        ButtonWidget cancel = new ButtonWidget(posXButtons + (buttonLength / 2 + 3) * 2, positionY[8], buttonLength / 2 - 3, 20, new TranslatableText("ui.proxyserver.options.cancel"), (button) -> {
-            MinecraftClient.getInstance().openScreen(parentScreen);
-        });
-        this.addDrawableChild(cancel);
+        oldProxy = ProxyServer.proxy;
     }
 
     @Override
-    public void onClose() {
+    public void onGuiClosed() {
+        super.onGuiClosed();
         msg = "";
-        MinecraftClient.getInstance().keyboard.setRepeatEvents(false);
+        Keyboard.enableRepeatEvents(false);
     }
 }

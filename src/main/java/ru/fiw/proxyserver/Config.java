@@ -1,68 +1,46 @@
 package ru.fiw.proxyserver;
 
-import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
-import net.minecraft.client.MinecraftClient;
-import org.apache.commons.io.FileUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.common.config.Configuration;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 
 public class Config {
-    private static final String CONFIG_PATH = MinecraftClient.getInstance().runDirectory + "/config/ProxyServerConfig.json";
-    public static HashMap<String, Proxy> accounts = new HashMap<>();
-    public static String lastPlayerName = "";
+    private static Configuration config;
+    private final static String CATEGORY = "current_proxy";
 
-    public static void loadConfig() {
-        File configFile = new File(CONFIG_PATH);
-
+    public static void loadCurrentProxy() {
         try {
-            if (!configFile.exists()) {
-                if (!configFile.createNewFile()) {
-                    System.out.println("Error creating ProxyServerConfig.json file");
-                }
-                return;
-            }
+            config = new Configuration(new File(Minecraft.getMinecraft().mcDataDir + "/config", "ProxyServer.cfg"));
+            config.load();
 
-            String configString = FileUtils.readFileToString(configFile, "UTF-8");
+            String typeString = config.get(CATEGORY, "type", "SOCKS5", "Type").getString();
+            boolean isSocks4 = typeString.equals("SOCKS4");
 
-            if (!configString.isEmpty()) {
-                JsonObject configJson = new JsonParser().parse(configString).getAsJsonObject();
-                ProxyServer.proxyEnabled = configJson.get("proxy-enabled").getAsBoolean();
+            String ip = config.get(CATEGORY, "ip", "", "Ip").getString();
+            int port = config.get(CATEGORY, "port", 0, "Port").getInt();
 
-                Type type = new TypeToken<HashMap<String, Proxy>>() {
-                }.getType();
-                accounts = new Gson().fromJson(configJson.get("accounts"), type);
-                if (accounts == null) {
-                    accounts = new HashMap<>();
-                }
-            }
+            String userID = config.get(CATEGORY, "userid", "", "User ID for socks4").getString();
+            String username = config.get(CATEGORY, "username", "", "Username for socks5").getString();
+            String password = config.get(CATEGORY, "password", "", "Password for socks5").getString();
+
+            ProxyServer.proxy = new Proxy(isSocks4, ip, port, userID, username, password);
         } catch (Exception e) {
-            System.out.println("Error reading ProxyServerConfig.json file");
-            e.printStackTrace();
+            System.out.println("Error loading config, returning to default variables.");
+        } finally {
+            config.save();
         }
     }
 
-    public static void setDefaultProxy(Proxy proxy) {
-        accounts.put("", proxy);
-    }
+    public static void saveProxy(Proxy proxy) {
+        config.get(CATEGORY, "type", "SOCKS5", "Type").set(proxy.type.name());
 
-    public static void saveConfig() {
-        try {
-            JsonElement accountsJsonObject = new Gson().toJsonTree(accounts);
+        config.get(CATEGORY, "ip", "", "Ip").set(proxy.ip);
+        config.get(CATEGORY, "port", 0, "Port").set(proxy.port);
 
-            JsonObject configJson = new JsonObject();
-            configJson.addProperty("proxy-enabled", ProxyServer.proxyEnabled);
-            configJson.add("accounts", accountsJsonObject);
-
-            Gson gsonPretty = new GsonBuilder().setPrettyPrinting().create();
-            FileUtils.write(new File(CONFIG_PATH), gsonPretty.toJson(configJson), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            System.out.println("Error writing ProxyServerConfig.json file");
-            e.printStackTrace();
-        }
+        config.get(CATEGORY, "userid", "", "User ID for socks4").set(proxy.userID);
+        config.get(CATEGORY, "username", "", "Username for socks5").set(proxy.username);
+        config.get(CATEGORY, "password", "", "Password for socks5").set(proxy.password);
+        config.save();
     }
 }
