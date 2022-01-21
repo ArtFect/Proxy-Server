@@ -153,7 +153,7 @@ public class GuiProxy extends Screen {
                 ProxyServer.proxyEnabled = enabledCheck.isChecked();
                 Config.setDefaultProxy(ProxyServer.proxy);
                 Config.saveConfig();
-                MinecraftClient.getInstance().openScreen(new MultiplayerScreen(new TitleScreen()));
+                MinecraftClient.getInstance().setScreen(new MultiplayerScreen(new TitleScreen()));
             }
         });
         this.addDrawableChild(apply);
@@ -174,7 +174,7 @@ public class GuiProxy extends Screen {
         this.addDrawableChild(this.enabledCheck);
 
         ButtonWidget cancel = new ButtonWidget(posXButtons + (buttonLength / 2 + 3) * 2, positionY[8], buttonLength / 2 - 3, 20, new TranslatableText("ui.proxyserver.options.cancel"), (button) -> {
-            MinecraftClient.getInstance().openScreen(parentScreen);
+            MinecraftClient.getInstance().setScreen(parentScreen);
         });
         this.addDrawableChild(cancel);
     }

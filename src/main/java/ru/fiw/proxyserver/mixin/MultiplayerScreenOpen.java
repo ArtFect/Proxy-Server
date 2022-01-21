@@ -30,7 +30,7 @@ public class MultiplayerScreenOpen {
 
         MultiplayerScreen ms = (MultiplayerScreen) (Object) this;
         ProxyServer.proxyMenuButton = new ButtonWidget(ms.width - 125, 5, 120, 20, new LiteralText("Proxy: " + ProxyServer.getLastUsedProxyIp()), (buttonWidget) -> {
-            MinecraftClient.getInstance().openScreen(new GuiProxy(ms));
+            MinecraftClient.getInstance().setScreen(new GuiProxy(ms));
         });
 
         ScreenAccessor si = (ScreenAccessor) ms;
