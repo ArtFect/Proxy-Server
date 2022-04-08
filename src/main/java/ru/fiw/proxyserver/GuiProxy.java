@@ -180,7 +180,7 @@ public class GuiProxy extends Screen {
     }
 
     @Override
-    public void onClose() {
+    public void close() {
         msg = "";
         MinecraftClient.getInstance().keyboard.setRepeatEvents(false);
     }

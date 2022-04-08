@@ -15,7 +15,6 @@ import java.net.InetSocketAddress;
 
 @Mixin(targets = "net/minecraft/network/ClientConnection$1")
 public class ClientConnectionInit {
-    @SuppressWarnings("UnresolvedMixinReference")
     @Inject(method = "initChannel(Lio/netty/channel/Channel;)V", at = @At("HEAD"))
     private void connect(Channel channel, CallbackInfo cir) {
         Proxy proxy = ProxyServer.proxy;
