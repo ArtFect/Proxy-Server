@@ -18,10 +18,8 @@ import net.minecraft.network.packet.c2s.query.QueryRequestC2SPacket;
 import net.minecraft.network.packet.s2c.query.QueryPongS2CPacket;
 import net.minecraft.network.packet.s2c.query.QueryResponseS2CPacket;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -42,15 +40,15 @@ public class TestPing {
     }
 
     private void ping(String ip, int port) {
-        state = new TranslatableText("ui.proxyserver.ping.pinging", ip).getString();
+        state = Text.translatable("ui.proxyserver.ping.pinging", ip).getString();
         ClientConnection clientConnection;
         try {
             clientConnection = createTestClientConnection(InetAddress.getByName(ip), port);
         } catch (UnknownHostException e) {
-            state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantConnect").getString();
+            state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantConnect").getString();
             return;
         } catch (Exception e) {
-            state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantPing", ip).getString();
+            state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPing", ip).getString();
             return;
         }
         pingDestination = clientConnection;
@@ -66,14 +64,14 @@ public class TestPing {
                 successful = true;
                 pingDestination = null;
                 long pingToServer = Util.getMeasuringTimeMs() - pingSentAt;
-                state = new TranslatableText("ui.proxyserver.ping.showPing", pingToServer).getString();
-                clientConnection.disconnect(new TranslatableText("multiplayer.status.finished"));
+                state = Text.translatable("ui.proxyserver.ping.showPing", pingToServer).getString();
+                clientConnection.disconnect(Text.translatable("multiplayer.status.finished"));
             }
 
             public void onDisconnected(Text reason) {
                 pingDestination = null;
                 if (!this.successful) {
-                    state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantPingReason", ip, reason.getString()).getString();
+                    state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPingReason", ip, reason.getString()).getString();
                 }
             }
 
@@ -86,7 +84,7 @@ public class TestPing {
             clientConnection.send(new HandshakeC2SPacket(ip, port, NetworkState.STATUS));
             clientConnection.send(new QueryRequestC2SPacket());
         } catch (Throwable throwable) {
-            state = Formatting.RED + new TranslatableText("ui.proxyserver.err.cantPing", ip).getString();
+            state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPing", ip).getString();
         }
     }
 
