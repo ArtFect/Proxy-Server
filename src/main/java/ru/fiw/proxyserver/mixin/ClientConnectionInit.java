@@ -3,7 +3,7 @@ package ru.fiw.proxyserver.mixin;
 import io.netty.channel.Channel;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -31,6 +31,6 @@ public class ClientConnectionInit {
             ProxyServer.lastUsedProxy = new Proxy();
         }
 
-        ProxyServer.proxyMenuButton.setMessage(new LiteralText("Proxy: " + ProxyServer.getLastUsedProxyIp()));
+        ProxyServer.proxyMenuButton.setMessage(Text.literal("Proxy: " + ProxyServer.getLastUsedProxyIp()));
     }
 }
