@@ -28,9 +28,9 @@ public class GuiProxy extends Screen {
     private int positionX;
 
     private TestPing testPing = new TestPing();
-    
-    
-	private static String text_proxy = Text.translatable("ui.proxyserver.options.proxy").getString();
+
+
+    private static String text_proxy = Text.translatable("ui.proxyserver.options.proxy").getString();
 
 
     public GuiProxy(Screen parentScreen) {
@@ -116,16 +116,16 @@ public class GuiProxy extends Screen {
 
     @Override
     public void init() {
-        MinecraftClient.getInstance().keyboard.setRepeatEvents(true);
+//        MinecraftClient.getInstance().keyboard.setRepeatEvents(true);
         int buttonLength = 160;
         centerButtons(10, buttonLength, 26);
 
         isSocks4 = ProxyServer.proxy.type == Proxy.ProxyType.SOCKS4;
 
-        ButtonWidget proxyType = new ButtonWidget(positionX, positionY[1], buttonLength, 20, Text.literal(isSocks4 ? "Socks 4" : "Socks 5"), (button) -> {
+        ButtonWidget proxyType = ButtonWidget.builder(Text.literal(isSocks4 ? "Socks 4" : "Socks 5"), button -> {
             isSocks4 = !isSocks4;
             button.setMessage(Text.literal(isSocks4 ? "Socks 4" : "Socks 5"));
-        });
+        }).dimensions(positionX, positionY[1], buttonLength, 20).build();
         this.addDrawableChild(proxyType);
 
         this.ipPort = new TextFieldWidget(this.textRenderer, positionX, positionY[2], buttonLength, 20, Text.literal(""));
@@ -146,7 +146,7 @@ public class GuiProxy extends Screen {
 
         int posXButtons = (this.width / 2) - (((buttonLength / 2) * 3) / 2);
 
-        ButtonWidget apply = new ButtonWidget(posXButtons, positionY[8], buttonLength / 2 - 3, 20,  Text.translatable("ui.proxyserver.options.apply"), (button) -> {
+        ButtonWidget apply = ButtonWidget.builder(Text.translatable("ui.proxyserver.options.apply"), button -> {
             if (checkProxy()) {
                 ProxyServer.proxy = new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText());
                 ProxyServer.proxyEnabled = enabledCheck.isChecked();
@@ -154,10 +154,10 @@ public class GuiProxy extends Screen {
                 Config.saveConfig();
                 MinecraftClient.getInstance().setScreen(new MultiplayerScreen(new TitleScreen()));
             }
-        });
+        }).dimensions(posXButtons, positionY[8], buttonLength / 2 - 3, 20).build();
         this.addDrawableChild(apply);
 
-        ButtonWidget test = new ButtonWidget(posXButtons + buttonLength / 2 + 3, positionY[8], buttonLength / 2 - 3, 20, Text.translatable("ui.proxyserver.options.test"), (button) -> {
+        ButtonWidget test = ButtonWidget.builder(Text.translatable("ui.proxyserver.options.test"), (button) -> {
             if (ipPort.getText().isEmpty() || ipPort.getText().equalsIgnoreCase("none")) {
                 msg = Formatting.RED + Text.translatable("ui.proxyserver.err.specProxy").getString();
                 return;
@@ -166,21 +166,21 @@ public class GuiProxy extends Screen {
                 testPing = new TestPing();
                 testPing.run("mc.hypixel.net", 25565, new Proxy(isSocks4, ipPort.getText(), username.getText(), password.getText()));
             }
-        });
+        }).dimensions(posXButtons + buttonLength / 2 + 3, positionY[8], buttonLength / 2 - 3, 20).build();
         this.addDrawableChild(test);
 
         this.enabledCheck = new CheckboxWidget((this.width / 2) - (15 + textRenderer.getWidth(Text.translatable("ui.proxyserver.options.proxyEnabled"))) / 2, positionY[7], buttonLength, 20, Text.translatable("ui.proxyserver.options.proxyEnabled"), ProxyServer.proxyEnabled);
         this.addDrawableChild(this.enabledCheck);
 
-        ButtonWidget cancel = new ButtonWidget(posXButtons + (buttonLength / 2 + 3) * 2, positionY[8], buttonLength / 2 - 3, 20, Text.translatable("ui.proxyserver.options.cancel"), (button) -> {
+        ButtonWidget cancel = ButtonWidget.builder(Text.translatable("ui.proxyserver.options.cancel"), (button) -> {
             MinecraftClient.getInstance().setScreen(parentScreen);
-        });
+        }).dimensions(posXButtons + (buttonLength / 2 + 3) * 2, positionY[8], buttonLength / 2 - 3, 20).build();
         this.addDrawableChild(cancel);
     }
 
     @Override
     public void close() {
         msg = "";
-        MinecraftClient.getInstance().keyboard.setRepeatEvents(false);
+//        MinecraftClient.getInstance().keyboard.setRepeatEvents(false);
     }
 }
