@@ -15,28 +15,14 @@ repositories {
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	modImplementation 'io.netty:netty-handler-proxy:4.1.79.Final'
+    include(modImplementation('io.netty:netty-handler-proxy:4.1.82.Final'))
+    include(modImplementation('io.netty:netty-codec-socks:4.1.82.Final'))
 
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	// Fabric API. This is technically optional, but you probably want it anyw
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	include 'io.netty:netty-handler-proxy:4.1.79.Final'
-	include 'io.netty:netty-common:4.1.79.Final'
-	include 'io.netty:netty-buffer:4.1.79.Final'
-	include 'io.netty:netty-transport:4.1.79.Final'
-	include 'io.netty:netty-codec:4.1.79.Final'
-	include 'io.netty:netty-codec-socks:4.1.79.Final'
-	include 'io.netty:netty-codec-http:4.1.79.Final'
-	compileOnly 'org.projectlombok:lombok:1.18.24'
-	annotationProcessor 'org.projectlombok:lombok:1.18.24'
-
-	testCompileOnly 'org.projectlombok:lombok:1.18.24'
-	testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
-	// PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
-	// You may need to force-disable transitiveness on them.
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // Fabric API. This is technically optional, but you probably want it anyw
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 processResources {
 	inputs.property "version", project.version
