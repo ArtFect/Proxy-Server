@@ -53,7 +53,7 @@ public class GuiProxy extends Screen {
     private boolean checkProxy() {
         if (!isValidIpPort(ipPort.getText())) {
             msg = Formatting.RED + Text.translatable("ui.proxyserver.options.invalidIpPort").getString();
-            this.ipPort.setTextFieldFocused(true);
+            this.ipPort.setFocused(true);
             return false;
         }
         return true;
@@ -85,22 +85,22 @@ public class GuiProxy extends Screen {
             enabledCheck.onPress();
         }
 
-        drawStringWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 10526880);
-        drawCenteredText(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
-        drawStringWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 10526880);
+        drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 10526880);
+        drawCenteredTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
+        drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 10526880);
 
         this.ipPort.render(matrixStack, mouseX, mouseY, partialTicks);
         if (isSocks4) {
-            drawStringWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
+            drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
             this.username.render(matrixStack, mouseX, mouseY, partialTicks);
         } else {
-            drawStringWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
-            drawStringWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 10526880);
+            drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
+            drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 10526880);
             this.username.render(matrixStack, mouseX, mouseY, partialTicks);
             this.password.render(matrixStack, mouseX, mouseY, partialTicks);
         }
 
-        drawCenteredText(matrixStack, this.textRenderer, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 10526880);
+        drawCenteredTextWithShadow(matrixStack, this.textRenderer, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 10526880);
 
         super.render(matrixStack, mouseX, mouseY, partialTicks);
     }
@@ -131,7 +131,7 @@ public class GuiProxy extends Screen {
         this.ipPort = new TextFieldWidget(this.textRenderer, positionX, positionY[2], buttonLength, 20, Text.literal(""));
         this.ipPort.setText(ProxyServer.proxy.ipPort);
         this.ipPort.setMaxLength(1024);
-        this.ipPort.setTextFieldFocused(true);
+        this.ipPort.setFocused(true);
         this.addSelectableChild(this.ipPort);
 
         this.username = new TextFieldWidget(this.textRenderer, positionX, positionY[4], buttonLength, 20, Text.literal(""));

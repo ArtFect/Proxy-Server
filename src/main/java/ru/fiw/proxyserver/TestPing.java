@@ -75,6 +75,11 @@ public class TestPing {
                 }
             }
 
+            @Override
+            public boolean isConnectionOpen() {
+                return true;
+            }
+
             public ClientConnection getConnection() {
                 return clientConnection;
             }
