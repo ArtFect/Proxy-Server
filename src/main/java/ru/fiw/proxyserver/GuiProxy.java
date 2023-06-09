@@ -1,13 +1,13 @@
 package ru.fiw.proxyserver;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.apache.commons.lang3.StringUtils;
@@ -78,31 +78,31 @@ public class GuiProxy extends Screen {
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(matrixStack);
+    public void render(DrawContext context, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(context);
 
         if (enabledCheck.isChecked() && !isValidIpPort(ipPort.getText())) {
             enabledCheck.onPress();
         }
 
-        drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 10526880);
-        drawCenteredTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
-        drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 10526880);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 10526880);
+        context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 10526880);
 
-        this.ipPort.render(matrixStack, mouseX, mouseY, partialTicks);
+        this.ipPort.render(context, mouseX, mouseY, partialTicks);
         if (isSocks4) {
-            drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
-            this.username.render(matrixStack, mouseX, mouseY, partialTicks);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
+            this.username.render(context, mouseX, mouseY, partialTicks);
         } else {
-            drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
-            drawTextWithShadow(matrixStack, this.textRenderer, Text.translatable("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 10526880);
-            this.username.render(matrixStack, mouseX, mouseY, partialTicks);
-            this.password.render(matrixStack, mouseX, mouseY, partialTicks);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 10526880);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
+            this.username.render(context, mouseX, mouseY, partialTicks);
+            this.password.render(context, mouseX, mouseY, partialTicks);
         }
 
-        drawCenteredTextWithShadow(matrixStack, this.textRenderer, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 10526880);
+        context.drawCenteredTextWithShadow(this.textRenderer, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 10526880);
 
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+        super.render(context, mouseX, mouseY, partialTicks);
     }
 
     @Override
