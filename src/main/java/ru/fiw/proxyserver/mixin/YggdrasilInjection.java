@@ -16,7 +16,7 @@ import ru.fiw.proxyserver.ProxyServer;
 import ru.fiw.proxyserver.proxiedObjects.SocksProxy;
 
 @Mixin(MinecraftClient.class)
-public class AuthService {
+public class YggdrasilInjection {
     @Final
     @Mutable
     @Shadow
