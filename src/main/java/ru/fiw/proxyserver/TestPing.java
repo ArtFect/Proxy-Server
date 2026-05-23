@@ -7,12 +7,11 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import net.minecraft.SharedConstants;
 import net.minecraft.network.ClientConnection;
+import net.minecraft.network.DisconnectionInfo;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.listener.ClientQueryPacketListener;
 import net.minecraft.network.packet.c2s.handshake.ConnectionIntent;
-import net.minecraft.network.packet.c2s.handshake.HandshakeC2SPacket;
 import net.minecraft.network.packet.c2s.query.QueryPingC2SPacket;
 import net.minecraft.network.packet.c2s.query.QueryRequestC2SPacket;
 import net.minecraft.network.packet.s2c.query.PingResultS2CPacket;
@@ -42,9 +41,8 @@ public class TestPing {
 
     private void ping(String ip, int port) {
         state = Text.translatable("ui.proxyserver.ping.pinging", ip).getString();
-        ClientConnection clientConnection;
         try {
-            clientConnection = createTestClientConnection(InetAddress.getByName(ip), port);
+            pingDestination = createTestClientConnection(ip, port);
         } catch (UnknownHostException e) {
             state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantConnect").getString();
             return;
@@ -52,9 +50,23 @@ public class TestPing {
             state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPing", ip).getString();
             return;
         }
-        pingDestination = clientConnection;
-        clientConnection.setPacketListener(new ClientQueryPacketListener() {
+        ClientConnection clientConnection = pingDestination;
+
+        ClientQueryPacketListener listener = new ClientQueryPacketListener() {
             private boolean successful;
+            private boolean sentQuery;
+
+            @Override
+            public void onResponse(QueryResponseS2CPacket packet) {
+                if (this.sentQuery) {
+                    clientConnection.disconnect(Text.translatable("multiplayer.status.unrequested"));
+                    return;
+                }
+
+                this.sentQuery = true;
+                pingSentAt = Util.getMeasuringTimeMs();
+                clientConnection.send(new QueryPingC2SPacket(pingSentAt));
+            }
 
             @Override
             public void onPingResult(PingResultS2CPacket packet) {
@@ -65,59 +77,65 @@ public class TestPing {
                 clientConnection.disconnect(Text.translatable("multiplayer.status.finished"));
             }
 
-            public void onResponse(QueryResponseS2CPacket packet) {
-                pingSentAt = Util.getMeasuringTimeMs();
-                clientConnection.send(new QueryPingC2SPacket(pingSentAt));
-            }
-
-            public void onDisconnected(Text reason) {
+            @Override
+            public void onDisconnected(DisconnectionInfo info) {
                 pingDestination = null;
                 if (!this.successful) {
-                    state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPingReason", ip, reason.getString()).getString();
+                    state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPingReason", ip, info.reason().getString()).getString();
                 }
             }
 
             @Override
             public boolean isConnectionOpen() {
-                return true;
+                return clientConnection.isOpen();
             }
-
-            public ClientConnection getConnection() {
-                return clientConnection;
-            }
-        });
+        };
 
         try {
-            clientConnection.send(new HandshakeC2SPacket(SharedConstants.getGameVersion().getProtocolVersion(), ip, port, ConnectionIntent.STATUS));
-            clientConnection.send(new QueryRequestC2SPacket());
+            clientConnection.connect(ip, port, listener);
+            clientConnection.send(QueryRequestC2SPacket.INSTANCE);
         } catch (Throwable throwable) {
+            pingDestination = null;
             state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPing", ip).getString();
+            clientConnection.disconnect(Text.translatable("multiplayer.status.cancelled"));
         }
     }
 
-    private ClientConnection createTestClientConnection(InetAddress address, int port) {
-        final ClientConnection clientConnection = new ClientConnection(NetworkSide.CLIENTBOUND);
+    private ClientConnection createTestClientConnection(String host, int port) throws UnknownHostException {
+        InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
+        ClientConnection connection = new ClientConnection(NetworkSide.CLIENTBOUND);
 
-        (new Bootstrap()).group(ClientConnection.CLIENT_IO_GROUP.get()).handler(new ChannelInitializer<>() {
-            protected void initChannel(Channel channel) {
-                ClientConnection.setHandlers(channel);
+        new Bootstrap()
+                .group((EventLoopGroup) ClientConnection.CLIENT_IO_GROUP.get())
+                .handler(new ChannelInitializer<>() {
+                    @Override
+                    protected void initChannel(Channel channel) {
+                        try {
+                            channel.config().setOption(ChannelOption.TCP_NODELAY, true);
+                        } catch (ChannelException ignored) {
+                        }
 
-                try {
-                    channel.config().setOption(ChannelOption.TCP_NODELAY, true);
-                } catch (ChannelException channelexception) {
-                }
+                        ChannelPipeline pipeline = channel.pipeline();
 
-                ChannelPipeline channelpipeline = channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30));
-                ClientConnection.addHandlers(channelpipeline, NetworkSide.CLIENTBOUND, null);
+                        if (proxy.type == Proxy.ProxyType.SOCKS5) {
+                            pipeline.addFirst(new Socks5ProxyHandler(new InetSocketAddress(proxy.getIp(), proxy.getPort()),
+                                    proxy.username.isEmpty() ? null : proxy.username,
+                                    proxy.password.isEmpty() ? null : proxy.password));
+                        } else {
+                            pipeline.addFirst(new Socks4ProxyHandler(new InetSocketAddress(proxy.getIp(), proxy.getPort()),
+                                    proxy.username.isEmpty() ? null : proxy.username));
+                        }
 
-                if (proxy.type == Proxy.ProxyType.SOCKS5) {
-                    channel.pipeline().addFirst(new Socks5ProxyHandler(new InetSocketAddress(proxy.getIp(), proxy.getPort()), proxy.username.isEmpty() ? null : proxy.username, proxy.password.isEmpty() ? null : proxy.password));
-                } else {
-                    channel.pipeline().addFirst(new Socks4ProxyHandler(new InetSocketAddress(proxy.getIp(), proxy.getPort()), proxy.username.isEmpty() ? null : proxy.username));
-                }
-            }
-        }).channel(NioSocketChannel.class).connect(address, port).syncUninterruptibly();
-        return clientConnection;
+                        pipeline.addLast("timeout", new ReadTimeoutHandler(30));
+                        ClientConnection.addHandlers(pipeline, NetworkSide.CLIENTBOUND, false, null);
+                        connection.addFlowControlHandler(pipeline);
+                    }
+                })
+                .channel(NioSocketChannel.class)
+                .connect(address)
+                .syncUninterruptibly();
+
+        return connection;
     }
 
     public void pingPendingNetworks() {
