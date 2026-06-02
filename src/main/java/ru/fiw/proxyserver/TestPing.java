@@ -8,6 +8,7 @@ import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import net.minecraft.network.ClientConnection;
+import net.minecraft.network.NetworkingBackend;
 import net.minecraft.network.DisconnectionInfo;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.listener.ClientQueryPacketListener;
@@ -106,7 +107,7 @@ public class TestPing {
         ClientConnection connection = new ClientConnection(NetworkSide.CLIENTBOUND);
 
         new Bootstrap()
-                .group((EventLoopGroup) ClientConnection.CLIENT_IO_GROUP.get())
+                .group(NetworkingBackend.remote(false).getEventLoopGroup())
                 .handler(new ChannelInitializer<>() {
                     @Override
                     protected void initChannel(Channel channel) {
