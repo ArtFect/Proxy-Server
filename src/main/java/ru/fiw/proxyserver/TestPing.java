@@ -48,6 +48,7 @@ public class TestPing {
             state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantConnect").getString();
             return;
         } catch (Exception e) {
+            e.printStackTrace();
             state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPing", ip).getString();
             return;
         }
@@ -96,6 +97,7 @@ public class TestPing {
             clientConnection.connect(ip, port, listener);
             clientConnection.send(QueryRequestC2SPacket.INSTANCE);
         } catch (Throwable throwable) {
+            throwable.printStackTrace();
             pingDestination = null;
             state = Formatting.RED + Text.translatable("ui.proxyserver.err.cantPing", ip).getString();
             clientConnection.disconnect(Text.translatable("multiplayer.status.cancelled"));
