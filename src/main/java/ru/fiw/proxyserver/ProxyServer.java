@@ -16,5 +16,13 @@ public class ProxyServer implements ModInitializer {
     @Override
     public void onInitialize() {
         Config.loadConfig();
+        ProxySourceResolver.applyRuntimeOverrides();
+
+        if (proxy.ipPort.isEmpty()) {
+            ProxySourceResolver.loadDefaultFile().ifPresent(loadedProxy -> {
+                proxy = loadedProxy;
+                lastUsedProxy = loadedProxy;
+            });
+        }
     }
 }

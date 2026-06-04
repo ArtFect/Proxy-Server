@@ -2,6 +2,7 @@ package ru.fiw.proxyserver;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
@@ -10,6 +11,7 @@ import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+
 import org.apache.commons.lang3.StringUtils;
 
 public class GuiProxy extends Screen {
@@ -70,8 +72,8 @@ public class GuiProxy extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        super.keyPressed(keyCode, scanCode, modifiers);
+    public boolean keyPressed(KeyInput input) {
+        super.keyPressed(input);
         msg = "";
         testPing.state = "";
         return true;
@@ -82,25 +84,25 @@ public class GuiProxy extends Screen {
         super.render(context, mouseX, mouseY, partialTicks);
 
         if (enabledCheck.isChecked() && !isValidIpPort(ipPort.getText())) {
-            enabledCheck.onPress();
+            enabledCheck.onPress(new KeyInput(0, 0, 0));
         }
 
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 10526880);
-        context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, Formatting.WHITE.getColorValue());
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 10526880);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.proxyType").getString(), this.width / 2 - 150, positionY[1] + 5, 0xFFA0A0A0);
+        context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.auth").getString(), this.width / 2, positionY[3] + 8, 0xFFFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.options.ipPort").getString(), this.width / 2 - 150, positionY[2] + 5, 0xFFA0A0A0);
 
         this.ipPort.render(context, mouseX, mouseY, partialTicks);
         if (isSocks4) {
-            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.id").getString(), this.width / 2 - 150, positionY[4] + 5, 0xFFA0A0A0);
             this.username.render(context, mouseX, mouseY, partialTicks);
         } else {
-            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 10526880);
-            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 10526880);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.password").getString(), this.width / 2 - 150, positionY[5] + 5, 0xFFA0A0A0);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("ui.proxyserver.auth.username").getString(), this.width / 2 - 150, positionY[4] + 5, 0xFFA0A0A0);
             this.username.render(context, mouseX, mouseY, partialTicks);
             this.password.render(context, mouseX, mouseY, partialTicks);
         }
 
-        context.drawCenteredTextWithShadow(this.textRenderer, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 10526880);
+        context.drawCenteredTextWithShadow(this.textRenderer, !msg.isEmpty() ? msg : testPing.state, this.width / 2, positionY[6] + 5, 0xFFA0A0A0);
     }
 
     @Override
